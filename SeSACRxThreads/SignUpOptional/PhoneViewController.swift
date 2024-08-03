@@ -21,7 +21,7 @@ class PhoneViewController: UIViewController {
         var text:String {
             switch self {
             case .tooShort:
-                "10자리 이상 입력해주세요"
+                "10자리를 입력해주세요"
             case .tooLong:
                 "너무 깁니다. 전화번호를 다시 확인해주세요."
             case .notANumber:

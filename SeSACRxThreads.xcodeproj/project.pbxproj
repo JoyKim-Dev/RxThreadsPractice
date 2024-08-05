@@ -34,6 +34,7 @@
 		35473FB82C61086F00A40B3B /* PasswordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35473FB72C61086F00A40B3B /* PasswordViewModel.swift */; };
 		35473FBA2C61087C00A40B3B /* BirthdayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35473FB92C61087C00A40B3B /* BirthdayViewModel.swift */; };
 		35473FBC2C61088800A40B3B /* PhoneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35473FBB2C61088800A40B3B /* PhoneViewModel.swift */; };
+		35473FBE2C61211800A40B3B /* ShoppingListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35473FBD2C61211800A40B3B /* ShoppingListViewModel.swift */; };
 		35D2F47D2C5FC066002D8E70 /* ShoppingListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D2F47C2C5FC066002D8E70 /* ShoppingListViewController.swift */; };
 		35D2F47F2C5FC0C8002D8E70 /* ShoppingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D2F47E2C5FC0C8002D8E70 /* ShoppingModel.swift */; };
 		35D2F4812C5FC0DC002D8E70 /* ShoppingListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D2F4802C5FC0DC002D8E70 /* ShoppingListTableViewCell.swift */; };
@@ -86,6 +87,7 @@
 		35473FB72C61086F00A40B3B /* PasswordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordViewModel.swift; sourceTree = "<group>"; };
 		35473FB92C61087C00A40B3B /* BirthdayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthdayViewModel.swift; sourceTree = "<group>"; };
 		35473FBB2C61088800A40B3B /* PhoneViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneViewModel.swift; sourceTree = "<group>"; };
+		35473FBD2C61211800A40B3B /* ShoppingListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewModel.swift; sourceTree = "<group>"; };
 		35D2F47C2C5FC066002D8E70 /* ShoppingListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewController.swift; sourceTree = "<group>"; };
 		35D2F47E2C5FC0C8002D8E70 /* ShoppingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingModel.swift; sourceTree = "<group>"; };
 		35D2F4802C5FC0DC002D8E70 /* ShoppingListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListTableViewCell.swift; sourceTree = "<group>"; };
@@ -234,6 +236,7 @@
 				35D2F47C2C5FC066002D8E70 /* ShoppingListViewController.swift */,
 				35D2F4802C5FC0DC002D8E70 /* ShoppingListTableViewCell.swift */,
 				35D2F4832C5FCEE9002D8E70 /* DetailListViewController.swift */,
+				35473FBD2C61211800A40B3B /* ShoppingListViewModel.swift */,
 			);
 			path = ShoppingList;
 			sourceTree = "<group>";
@@ -399,6 +402,7 @@
 				0412806A2AEFA91E00972552 /* SignUpViewController.swift in Sources */,
 				041280712AEFAD3D00972552 /* PhoneViewController.swift in Sources */,
 				041280262AEF9BAB00972552 /* SceneDelegate.swift in Sources */,
+				35473FBE2C61211800A40B3B /* ShoppingListViewModel.swift in Sources */,
 				041280582AEFA05300972552 /* SignInViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

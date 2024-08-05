@@ -19,6 +19,7 @@ class ShoppingListViewController: UIViewController {
     let textField = UITextField()
     let addButton = UIButton()
     
+    let viewModel = ShoppingListViewModel()
     let disposeBag = DisposeBag()
     let shoppingListSubject = BehaviorSubject<[String]>(value: [])
     let filteredListSubject = BehaviorSubject<[String]>(value: [])
@@ -32,42 +33,42 @@ class ShoppingListViewController: UIViewController {
         configHierarchy()
         configLayout()
         configUI()
-        setTableView()
         bind()
     }
     
     func bind() {
         
-        addButton.rx.tap
-                  .withLatestFrom(textField.rx.text.orEmpty)
-                  .filter { !$0.isEmpty }
-                  .subscribe(onNext: { [weak self] newItem in
-                      guard let self = self else { return }
-                      var currentList = try! self.shoppingListSubject.value()
-                      currentList.append(newItem)
-                      self.shoppingListSubject.onNext(currentList)
-                      self.updateFilteredList(with: "")
-                      self.textField.text = ""
-                  })
-                  .disposed(by: disposeBag)
-        
-        shoppingTableView.rx.itemSelected
-            .subscribe(onNext: { [weak self] indexPath in
-                guard let self = self else { return }
-                let detailVC = DetailListViewController()
-                detailVC.navigationItem.title = try! self.filteredListSubject.value()[indexPath.row]
-                self.navigationController?.pushViewController(detailVC, animated: true)
-            })
-            .disposed(by: disposeBag)
-        
-        searchBar.rx.text.orEmpty
-                    .debounce(.seconds(1), scheduler: MainScheduler.instance)
-                   .distinctUntilChanged()
-                   .bind(with: self) { owner, query in
-                       self.updateFilteredList(with: query)
+        let input = ShoppingListViewModel.Input(
+                   addItem: addButton.rx.tap
+                       .withLatestFrom(textField.rx.text.orEmpty)
+                       .filter { !$0.isEmpty }
+                       .asObservable(),
+                   searchQuery: searchBar.rx.text.orEmpty
+                       .debounce(.seconds(1), scheduler: MainScheduler.instance)
+                       .distinctUntilChanged()
+                       .asObservable(),
+                   itemSelected: shoppingTableView.rx.itemSelected.asObservable()
+               )
+               
+               let output = viewModel.transform(input: input)
+               
+             
+               output.filteredList
+                   .bind(to: shoppingTableView.rx.items(cellIdentifier: ShoppingListTableViewCell.identifier, cellType: ShoppingListTableViewCell.self)) { row, element, cell in
+                       cell.configUI(data: element)
                    }
                    .disposed(by: disposeBag)
-    }
+               
+        
+               output.selectedItem
+                   .subscribe(onNext: { [weak self] selectedItem in
+                       guard let self = self else { return }
+                       let detailVC = DetailListViewController()
+                       detailVC.navigationItem.title = selectedItem
+                       self.navigationController?.pushViewController(detailVC, animated: true)
+                   })
+                   .disposed(by: disposeBag)
+           }
     
 }
 
@@ -119,25 +120,6 @@ extension ShoppingListViewController {
         
     }
 
-    func updateFilteredList(with query: String) {
-            let currentList = try! shoppingListSubject.value()
-            if query.isEmpty {
-                filteredListSubject.onNext(currentList)
-            } else {
-                let filteredList = currentList.filter { $0.contains(query) }
-                filteredListSubject.onNext(filteredList)
-            }
-        }
    
-    func setTableView() {
-        filteredListSubject
-            .bind(to: shoppingTableView.rx.items(cellIdentifier: ShoppingListTableViewCell.identifier, cellType: ShoppingListTableViewCell.self)) { row, element, cell in
-                cell.configUI(data: element)
-            }
-            .disposed(by: disposeBag)
-        
-        
-    }
-    
 }
 

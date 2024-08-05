@@ -21,12 +21,14 @@ class ShoppingListViewController: UIViewController {
     
     let disposeBag = DisposeBag()
     let shoppingListSubject = BehaviorSubject<[String]>(value: [])
+    let filteredListSubject = BehaviorSubject<[String]>(value: [])
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         navigationController?.title = "쇼핑"
         shoppingListSubject.onNext(list)
+        filteredListSubject.onNext(list)
         configHierarchy()
         configLayout()
         configUI()
@@ -37,28 +39,35 @@ class ShoppingListViewController: UIViewController {
     func bind() {
         
         addButton.rx.tap
-            .withLatestFrom(textField.rx.text.orEmpty)
-            .filter { !$0.isEmpty }
-            .subscribe(onNext: { [weak self] newItem in
-                guard let self = self else { return }
-                var currentList = try! self.shoppingListSubject.value()
-                currentList.append(newItem)
-                self.shoppingListSubject.onNext(currentList)
-                self.textField.text = ""
-            })
-            .disposed(by: disposeBag)
+                  .withLatestFrom(textField.rx.text.orEmpty)
+                  .filter { !$0.isEmpty }
+                  .subscribe(onNext: { [weak self] newItem in
+                      guard let self = self else { return }
+                      var currentList = try! self.shoppingListSubject.value()
+                      currentList.append(newItem)
+                      self.shoppingListSubject.onNext(currentList)
+                      self.updateFilteredList(with: "")
+                      self.textField.text = ""
+                  })
+                  .disposed(by: disposeBag)
         
         shoppingTableView.rx.itemSelected
             .subscribe(onNext: { [weak self] indexPath in
                 guard let self = self else { return }
-                let detailVC = DetailViewController()
-                self.navigationController?.pushViewController(SignUpViewController(), animated: true)
+                let detailVC = DetailListViewController()
+                detailVC.navigationItem.title = try! self.filteredListSubject.value()[indexPath.row]
+                self.navigationController?.pushViewController(detailVC, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        searchBar.rx.text.orEmpty
+                    .debounce(.seconds(1), scheduler: MainScheduler.instance)
+                   .distinctUntilChanged()
+                   .bind(with: self) { owner, query in
+                       self.updateFilteredList(with: query)
+                   }
+                   .disposed(by: disposeBag)
     }
-    
-    
-    
     
 }
 
@@ -109,14 +118,25 @@ extension ShoppingListViewController {
         shoppingTableView.register(ShoppingListTableViewCell.self, forCellReuseIdentifier: ShoppingListTableViewCell.identifier)
         
     }
-    
+
+    func updateFilteredList(with query: String) {
+            let currentList = try! shoppingListSubject.value()
+            if query.isEmpty {
+                filteredListSubject.onNext(currentList)
+            } else {
+                let filteredList = currentList.filter { $0.contains(query) }
+                filteredListSubject.onNext(filteredList)
+            }
+        }
+   
     func setTableView() {
-        shoppingListSubject
+        filteredListSubject
             .bind(to: shoppingTableView.rx.items(cellIdentifier: ShoppingListTableViewCell.identifier, cellType: ShoppingListTableViewCell.self)) { row, element, cell in
-                cell.lable.text = element
-                
+                cell.configUI(data: element)
             }
             .disposed(by: disposeBag)
+        
+        
     }
     
 }

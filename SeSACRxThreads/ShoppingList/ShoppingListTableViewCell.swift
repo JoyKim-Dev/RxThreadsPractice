@@ -19,12 +19,16 @@ final class ShoppingListTableViewCell: UITableViewCell {
     let favorite = UIImageView()
     
     private let disposeBag = DisposeBag()
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         configHierarchy()
         configLayout()
-        configUI()
         bind()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
     }
     
     required init?(coder: NSCoder) {
@@ -57,11 +61,13 @@ final class ShoppingListTableViewCell: UITableViewCell {
         
     }
     
-    func configUI() {
+    func configUI(data:String) {
         checkBox.image = UIImage(systemName: "checkmark.square")
         checkBox.tintColor = .black
         favorite.image = UIImage(systemName: "star")
         favorite.tintColor = .black
+        lable.text = data
+        lable.textColor = .black
         
     }
     

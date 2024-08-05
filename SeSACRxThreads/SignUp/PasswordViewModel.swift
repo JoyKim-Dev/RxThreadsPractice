@@ -30,7 +30,4 @@ class PasswordViewModel {
         
         return Output(tap: input.tap, validText: validText, validation: validation)
     }
-    
-    
-    
 }

@@ -72,7 +72,7 @@ class BirthdayViewController: UIViewController {
     let day = BehaviorRelay(value: 3)
     
     let disposeBag = DisposeBag()
-    
+    let viewModel = BirthdayViewModel()
 
     
     override func viewDidLoad() {
@@ -86,73 +86,56 @@ class BirthdayViewController: UIViewController {
     }
 
     func bind() {
-        
-        let selectedDate = birthDayPicker.rx.date.share(replay: 1)
+        let input = BirthdayViewModel.Input(
+                    date: birthDayPicker.rx.date.asObservable(),
+                    tap: nextButton.rx.tap.asObservable()
+                )
 
-               selectedDate
-                   .map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
-                   .subscribe(onNext: { [weak self] components in
-                       guard let year = components.year, let month = components.month, let day = components.day else { return }
-                       self?.year.accept(year)
-                       self?.month.accept(month)
-                       self?.day.accept(day)
-                   })
-                   .disposed(by: disposeBag)
-               
-               year
-                   .map { "\($0)년" }
+                let output = viewModel.transform(input: input)
+
+//               selectedDate
+//                   .map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
+//                   .subscribe(onNext: { [weak self] components in
+//                       guard let year = components.year, let month = components.month, let day = components.day else { return }
+//                       self?.year.accept(year)
+//                       self?.month.accept(month)
+//                       self?.day.accept(day)
+//                   })
+//                   .disposed(by: disposeBag)
+//               
+        output.yearText
                    .bind(to: yearLabel.rx.text)
                    .disposed(by: disposeBag)
                
-               month
-                   .map { "\($0)월" }
+               output.monthText
                    .bind(to: monthLabel.rx.text)
                    .disposed(by: disposeBag)
                
-               day
-                   .map { "\($0)일" }
+               output.dayText
                    .bind(to: dayLabel.rx.text)
                    .disposed(by: disposeBag)
                
-               let ageValid = selectedDate
-                   .map { date -> Bool in
-                       let now = Date()
-                       let calendar = Calendar.current
-                       let ageComponents = calendar.dateComponents([.year], from: date, to: now)
-                       guard let age = ageComponents.year else { return false }
-                       return age >= 17
-                   }
-                   .share(replay: 1)
-               
-               ageValid
+               output.ageValid
                    .bind(to: nextButton.rx.isEnabled)
                    .disposed(by: disposeBag)
 
-               ageValid
+               output.ageValid
                    .subscribe(onNext: { [weak self] isValid in
-                       if isValid {
-                           self?.infoLabel.text = "가입 가능한 나이입니다."
-                           self?.infoLabel.textColor = .blue
-                           self?.nextButton.backgroundColor = .blue
-                       } else {
-                           self?.infoLabel.text = "만 17세 이상만 가입 가능합니다."
-                           self?.infoLabel.textColor = .red
-                           self?.nextButton.backgroundColor = .gray
-                       }
+                       self?.infoLabel.text = isValid ? "가입 가능한 나이입니다." : "만 17세 이상만 가입 가능합니다."
+                       self?.infoLabel.textColor = isValid ? .blue : .red
+                       self?.nextButton.backgroundColor = isValid ? .blue : .gray
                    })
                    .disposed(by: disposeBag)
-        
-              
-        
-        nextButton.rx.tap.bind(with: self) { owner, _ in 
-            let alert = UIAlertController(title: "완료", message: "가입이 완료되었습니다.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
-                owner.navigationController?.pushViewController(SearchViewController(), animated: true)
-            }))
-            owner.present(alert, animated: true, completion: nil)
-        }
-        .disposed(by: disposeBag)
-  
+
+               output.tap
+                   .subscribe(onNext: { [weak self] in
+                       let alert = UIAlertController(title: "완료", message: "가입이 완료되었습니다.", preferredStyle: .alert)
+                       alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
+                           self?.navigationController?.pushViewController(SearchViewController(), animated: true)
+                       }))
+                       self?.present(alert, animated: true, completion: nil)
+                   })
+                   .disposed(by: disposeBag)
         
     }
     func configureLayout() {

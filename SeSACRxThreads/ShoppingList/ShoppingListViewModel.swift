@@ -13,6 +13,7 @@ class ShoppingListViewModel {
     
     
     private let disposeBag = DisposeBag()
+    let shoppingList = BehaviorSubject<[String]>(value: [])
     
     struct Input {
   
@@ -31,7 +32,7 @@ class ShoppingListViewModel {
     
     func transform(input: Input) -> Output {
         
-        let shoppingList = BehaviorSubject<[String]>(value: [])
+      
         let filteredList = BehaviorSubject<[String]>(value: [])
         let recommendItemList = Observable.just(Shopping.recommendItemList)
         let duplicateItemAlert = PublishSubject<String>()
@@ -73,5 +74,15 @@ class ShoppingListViewModel {
             filteredList: filteredList, recommendItemList: recommendItemList,
             selectedItem: selectedItem, duplicateItemAlert: duplicateItemAlert
         )
+    }
+    
+    func deleteItem(index: Int) {
+        do {
+            var currentList = try shoppingList.value()
+            currentList.remove(at: index)
+            shoppingList.onNext(currentList)
+        } catch {
+            print("Error deleting item: \(error)")
+        }
     }
 }

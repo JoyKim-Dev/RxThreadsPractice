@@ -23,7 +23,7 @@ class ShoppingListViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        tableView.delegate = self
         configHierarchy()
         configLayout()
         configUI()
@@ -90,6 +90,13 @@ class ShoppingListViewController: UIViewController {
                         self?.present(alert, animated: true, completion: nil)
         }
         .disposed(by: disposeBag)
+        
+        tableView.rx.itemDeleted
+            .subscribe(onNext: { [weak self] indexPath in
+                guard let self = self else { return }
+                self.viewModel.deleteItem(index: indexPath.row)
+            })
+            .disposed(by: disposeBag)
     }
     func layout() -> UICollectionViewLayout {
         let layout = UICollectionViewFlowLayout()
@@ -152,3 +159,15 @@ extension ShoppingListViewController {
     
 }
 
+extension ShoppingListViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            viewModel.deleteItem(index: indexPath.row)
+        }
+    }
+}

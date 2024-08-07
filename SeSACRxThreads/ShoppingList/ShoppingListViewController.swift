@@ -83,6 +83,13 @@ class ShoppingListViewController: UIViewController {
                 self.navigationController?.pushViewController(detailVC, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        output.duplicateItemAlert.subscribe { [weak self] message in
+            let alert = UIAlertController(title: "알림", message: message, preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: "확인", style: .default, handler: nil))
+                        self?.present(alert, animated: true, completion: nil)
+        }
+        .disposed(by: disposeBag)
     }
     func layout() -> UICollectionViewLayout {
         let layout = UICollectionViewFlowLayout()

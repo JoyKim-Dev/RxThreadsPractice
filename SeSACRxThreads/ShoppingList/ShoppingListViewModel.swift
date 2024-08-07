@@ -26,6 +26,7 @@ class ShoppingListViewModel {
         let filteredList: BehaviorSubject<[String]>
         let recommendItemList: Observable<[String]>
         let selectedItem: Observable<String>
+        let duplicateItemAlert: Observable<String>
     }
     
     func transform(input: Input) -> Output {
@@ -33,11 +34,13 @@ class ShoppingListViewModel {
         let shoppingList = BehaviorSubject<[String]>(value: [])
         let filteredList = BehaviorSubject<[String]>(value: [])
         let recommendItemList = Observable.just(Shopping.recommendItemList)
+        let duplicateItemAlert = PublishSubject<String>()
         
         input.addItem
             .withLatestFrom(shoppingList) { ($0, $1) }
             .map { newItem, currentList in
                 if currentList.contains(newItem) {
+                    duplicateItemAlert.onNext("\(newItem): 이미 추가됨😎")
                     return currentList
                 } else {
                     var updatedList = currentList
@@ -68,7 +71,7 @@ class ShoppingListViewModel {
         return Output(
             shoppingList: shoppingList,
             filteredList: filteredList, recommendItemList: recommendItemList,
-            selectedItem: selectedItem
+            selectedItem: selectedItem, duplicateItemAlert: duplicateItemAlert
         )
     }
 }

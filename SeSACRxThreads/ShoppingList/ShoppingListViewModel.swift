@@ -11,51 +11,64 @@ import RxCocoa
 
 class ShoppingListViewModel {
     
-   let shoppingListSubject = BehaviorSubject<[String]>(value: Shopping.shoppingList)
     
     private let disposeBag = DisposeBag()
     
     struct Input {
-        let addItem: Observable<String>
-        let searchQuery: Observable<String>
-        let itemSelected: Observable<IndexPath>
+  
+        let addItem: PublishSubject<String>
+        let searchQuery: ControlProperty<String>
+        let itemSelected: ControlEvent<IndexPath>
     }
     
     struct Output {
-        let shoppingList: Observable<[String]>
-        let filteredList: Observable<[String]>
+        let shoppingList: BehaviorSubject<[String]>
+        let filteredList: BehaviorSubject<[String]>
+        let recommendItemList: Observable<[String]>
         let selectedItem: Observable<String>
     }
     
     func transform(input: Input) -> Output {
         
+        let shoppingList = BehaviorSubject<[String]>(value: [])
+        let filteredList = BehaviorSubject<[String]>(value: [])
+        let recommendItemList = Observable.just(Shopping.recommendItemList)
+        
         input.addItem
-            .withLatestFrom(shoppingListSubject) { ($0, $1) }
+            .withLatestFrom(shoppingList) { ($0, $1) }
             .map { newItem, currentList in
-                var updatedList = currentList
-                updatedList.append(newItem)
-                return updatedList
+                if currentList.contains(newItem) {
+                    return currentList
+                } else {
+                    var updatedList = currentList
+                    updatedList.append(newItem)
+                    return updatedList
+                }
             }
-            .bind(to: shoppingListSubject)
+            .bind(to: shoppingList)
             .disposed(by: disposeBag)
         
-      
-        let filteredListSubject = BehaviorSubject<[String]>(value: Shopping.shoppingList)
+        
         input.searchQuery
-            .withLatestFrom(shoppingListSubject) { query, list in
+            .debounce(.microseconds(50), scheduler: MainScheduler())
+                   .distinctUntilChanged()
+            .withLatestFrom(shoppingList) { query, list in
                 query.isEmpty ? list : list.filter { $0.contains(query) }
             }
-            .bind(to: filteredListSubject)
+            .bind(to: filteredList)
             .disposed(by: disposeBag)
         
-       
+        shoppingList
+            .bind(to: filteredList)
+            .disposed(by: disposeBag)
+        
         let selectedItem = input.itemSelected
-            .withLatestFrom(filteredListSubject) { $1[$0.row] }
+            .withLatestFrom(shoppingList) { $1[$0.row] }
         
         return Output(
-            shoppingList: shoppingListSubject.asObservable(),
-            filteredList: filteredListSubject.asObservable(),
-            selectedItem: selectedItem.asObservable()
+            shoppingList: shoppingList,
+            filteredList: filteredList, recommendItemList: recommendItemList,
+            selectedItem: selectedItem
         )
     }
 }

@@ -24,9 +24,9 @@ final class ShoppingListTableViewCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         configHierarchy()
         configLayout()
-        bind()
+        
     }
-
+    
     override func prepareForReuse() {
         super.prepareForReuse()
     }
@@ -62,16 +62,19 @@ final class ShoppingListTableViewCell: UITableViewCell {
     }
     
     func configUI(data:String) {
-        checkBox.image = UIImage(systemName: "checkmark.square")
+        let isChecked = UserDefaultManager.shared.isItemChecked(data)
+        let isFavorite = UserDefaultManager.shared.isItemFavorite(data)
+        
+        checkBox.image = isChecked ? UIImage(systemName: "checkmark.square.fill") : UIImage(systemName: "checkmark.square")
         checkBox.tintColor = .black
-        favorite.image = UIImage(systemName: "star")
+        favorite.image = isFavorite ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
         favorite.tintColor = .black
         lable.text = data
         lable.textColor = .black
-        
+        bind(data: data)
     }
     
-    func bind() {
+    func bind(data: String) {
         
         let checkBoxTapGesture = UITapGestureRecognizer()
         checkBox.addGestureRecognizer(checkBoxTapGesture)
@@ -79,11 +82,9 @@ final class ShoppingListTableViewCell: UITableViewCell {
         checkBoxTapGesture.rx.event
             .bind { [weak self] _ in
                 guard let self = self else { return }
-                if self.checkBox.image == UIImage(systemName: "checkmark.square") {
-                    self.checkBox.image = UIImage(systemName: "checkmark.square.fill")
-                } else {
-                    self.checkBox.image = UIImage(systemName: "checkmark.square")
-                }
+                let isChecked = !UserDefaultManager.shared.isItemChecked(data)
+                               UserDefaultManager.shared.setItemChecked(data, checked: isChecked)
+                               self.checkBox.image = isChecked ? UIImage(systemName: "checkmark.square.fill") : UIImage(systemName: "checkmark.square")
             }
             .disposed(by: disposeBag)
         
@@ -94,11 +95,9 @@ final class ShoppingListTableViewCell: UITableViewCell {
         favoriteTapGesture.rx.event
             .bind { [weak self] _ in
                 guard let self = self else { return }
-                if self.favorite.image == UIImage(systemName: "star") {
-                    self.favorite.image = UIImage(systemName: "star.fill")
-                } else {
-                    self.favorite.image = UIImage(systemName: "star")
-                }
+                let isFavorite = !UserDefaultManager.shared.isItemFavorite(data)
+                UserDefaultManager.shared.setItemFavorite(data, favorite: isFavorite)
+                                self.favorite.image = isFavorite ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
             }
             .disposed(by: disposeBag)
     }

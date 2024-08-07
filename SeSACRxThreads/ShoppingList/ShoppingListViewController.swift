@@ -12,24 +12,18 @@ import RxCocoa
 
 class ShoppingListViewController: UIViewController {
     
-    let list = Shopping.shoppingList
-    
-    let shoppingTableView = UITableView()
+    let tableView = UITableView()
+    lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout())
     let searchBar = UISearchBar()
     let textField = UITextField()
     let addButton = UIButton()
     
     let viewModel = ShoppingListViewModel()
     let disposeBag = DisposeBag()
-    let shoppingListSubject = BehaviorSubject<[String]>(value: [])
-    let filteredListSubject = BehaviorSubject<[String]>(value: [])
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
-        navigationController?.title = "쇼핑"
-        shoppingListSubject.onNext(list)
-        filteredListSubject.onNext(list)
+
         configHierarchy()
         configLayout()
         configUI()
@@ -38,58 +32,79 @@ class ShoppingListViewController: UIViewController {
     
     func bind() {
         
-        let input = ShoppingListViewModel.Input(
-                   addItem: addButton.rx.tap
-                       .withLatestFrom(textField.rx.text.orEmpty)
-                       .filter { !$0.isEmpty }
-                       .asObservable(),
-                   searchQuery: searchBar.rx.text.orEmpty
-                       .debounce(.seconds(1), scheduler: MainScheduler.instance)
-                       .distinctUntilChanged()
-                       .asObservable(),
-                   itemSelected: shoppingTableView.rx.itemSelected.asObservable()
-               )
-               
-               let output = viewModel.transform(input: input)
-               
-             
-               output.filteredList
-                   .bind(to: shoppingTableView.rx.items(cellIdentifier: ShoppingListTableViewCell.identifier, cellType: ShoppingListTableViewCell.self)) { row, element, cell in
-                       cell.configUI(data: element)
-                   }
-                   .disposed(by: disposeBag)
-               
+        let addItem = PublishSubject<String>()
         
-               output.selectedItem
-                   .subscribe(onNext: { [weak self] selectedItem in
-                       guard let self = self else { return }
-                       let detailVC = DetailListViewController()
-                       detailVC.navigationItem.title = selectedItem
-                       self.navigationController?.pushViewController(detailVC, animated: true)
-                   })
-                   .disposed(by: disposeBag)
-           }
-    
+        textField.rx.controlEvent(.editingDidEndOnExit)
+            .withLatestFrom(textField.rx.text.orEmpty)
+            .subscribe(with: self) { owner, value in
+                addItem.onNext(value)
+                owner.textField.text = ""
+            }
+            .disposed(by: disposeBag)
+        
+        addButton.rx.tap
+            .withLatestFrom(textField.rx.text.orEmpty)
+            .subscribe(with: self) { owner, value in
+                addItem.onNext(value)
+                owner.textField.text = ""
+            }
+            .disposed(by: disposeBag)
+        
+        Observable.zip(collectionView.rx.modelSelected(String.self), collectionView.rx.itemSelected)
+            .debug()
+            .map {$0.0}
+            .subscribe(with: self) { owner, value in
+                addItem.onNext(value)
+            }
+            .disposed(by: disposeBag)
+        
+        let input = ShoppingListViewModel.Input(addItem: addItem, searchQuery: searchBar.rx.text.orEmpty, itemSelected: tableView.rx.itemSelected)
+        
+        let output = viewModel.transform(input: input)
+      
+        output.filteredList
+            .bind(to: tableView.rx.items(cellIdentifier: ShoppingListTableViewCell.identifier, cellType: ShoppingListTableViewCell.self)) { row, element, cell in
+                cell.configUI(data: element)
+            }
+            .disposed(by: disposeBag)
+        
+        output.recommendItemList
+            .bind(to: collectionView.rx.items(cellIdentifier: RecommendItemCollectionViewCell.identifier, cellType: RecommendItemCollectionViewCell.self)) {
+                (row, element, cell) in
+                cell.label.text = element
+            }
+            .disposed(by: disposeBag)
+       
+        output.selectedItem
+            .subscribe(onNext: { [weak self] selectedItem in
+                guard let self = self else { return }
+                let detailVC = DetailListViewController()
+                detailVC.navigationItem.title = selectedItem
+                self.navigationController?.pushViewController(detailVC, animated: true)
+            })
+            .disposed(by: disposeBag)
+    }
+    func layout() -> UICollectionViewLayout {
+        let layout = UICollectionViewFlowLayout()
+        layout.itemSize = CGSize(width: 80, height: 40)
+        layout.scrollDirection = .horizontal
+        return layout
+    }
 }
 
 extension ShoppingListViewController {
     
     func configHierarchy() {
         view.addSubview(searchBar)
+        view.addSubview(collectionView)
         view.addSubview(textField)
-        view.addSubview(shoppingTableView)
+        view.addSubview(tableView)
         view.addSubview(addButton)
-        
-        
     }
     
     func configLayout() {
-        searchBar.snp.makeConstraints { make in
-            make.top.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(10)
-        }
         textField.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(10)
-            make.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(10)
+            make.top.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(10)
             make.height.equalTo(100)
         }
         addButton.snp.makeConstraints { make in
@@ -98,14 +113,22 @@ extension ShoppingListViewController {
             make.height.equalTo(30)
             make.trailing.equalTo(textField).inset(5)
         }
-        shoppingTableView.snp.makeConstraints { make in
+        collectionView.snp.makeConstraints { make in
             make.top.equalTo(textField.snp.bottom).offset(20)
+            make.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(10)
+            make.height.equalTo(50)
+        }
+        tableView.snp.makeConstraints { make in
+            make.top.equalTo(collectionView.snp.bottom).offset(20)
             make.horizontalEdges.bottom.equalTo(view.safeAreaLayoutGuide).inset(10)
         }
         
     }
     
     func configUI() {
+        view.backgroundColor = .white
+        navigationItem.titleView = searchBar
+        
         addButton.setTitle("추가", for: .normal)
         addButton.backgroundColor = .lightGray.withAlphaComponent(0.4)
         addButton.setTitleColor(.black, for: .normal)
@@ -116,10 +139,9 @@ extension ShoppingListViewController {
         textField.backgroundColor = .lightGray.withAlphaComponent(0.2)
         textField.placeholder = "무엇을 구매하실 건가요?"
         
-        shoppingTableView.register(ShoppingListTableViewCell.self, forCellReuseIdentifier: ShoppingListTableViewCell.identifier)
-        
+        tableView.register(ShoppingListTableViewCell.self, forCellReuseIdentifier: ShoppingListTableViewCell.identifier)
+        collectionView.register(RecommendItemCollectionViewCell.self, forCellWithReuseIdentifier: RecommendItemCollectionViewCell.identifier)
     }
-
-   
+    
 }
 

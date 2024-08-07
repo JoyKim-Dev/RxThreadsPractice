@@ -8,8 +8,11 @@
 import Foundation
 
 struct Shopping {
-    static let shoppingList = [
-    "양파", "사이다", "계란", "간장"
+//    static let shoppingList = [
+//    "양파", "사이다", "계란", "간장"
+//    ]
+    static let recommendItemList = [
+        "양파", "사이다", "계란", "간장", "연어", "와사비", "양상추", "복숭아"
     ]
 }
 
